@@ -3,12 +3,13 @@
 from bpy.types import Operator
 
 from ..core.animation_utils import pose_bone_selected
+from ..core.i18n import LocalizedOperator, translated_report
 from ..core.motion_cleanup import audit_motion, cleanup_rotations, repair_root_gap
 from .export_fbx import _get_export_armature
 from .vmd_io import _save_report
 
 
-class BVH_OT_audit_motion(Operator):
+class BVH_OT_audit_motion(LocalizedOperator, Operator):
     bl_idname = "bvh.audit_motion"
     bl_label = "Inspect Motion"
     bl_options = {"REGISTER"}
@@ -20,7 +21,9 @@ class BVH_OT_audit_motion(Operator):
             )
             _save_report(result)
             frames = result["suspect_discontinuity_frames"]
-            self.report(
+            translated_report(
+                context,
+                self.report,
                 {"WARNING"} if frames else {"INFO"},
                 "Root discontinuity candidates: " + str(frames[:12])
                 if frames
@@ -28,11 +31,11 @@ class BVH_OT_audit_motion(Operator):
             )
             return {"FINISHED"}
         except Exception as exc:
-            self.report({"ERROR"}, str(exc))
+            translated_report(context, self.report, {"ERROR"}, str(exc))
             return {"CANCELLED"}
 
 
-class BVH_OT_cleanup_motion(Operator):
+class BVH_OT_cleanup_motion(LocalizedOperator, Operator):
     bl_idname = "bvh.cleanup_motion"
     bl_label = "Create Denoised Copy"
     bl_options = {"REGISTER", "UNDO"}
@@ -59,17 +62,19 @@ class BVH_OT_cleanup_motion(Operator):
             scene.bvh_last_output_armature = armature.name
             context.view_layer.objects.active = armature
             _save_report(result)
-            self.report(
+            translated_report(
+                context,
+                self.report,
                 {"INFO"},
                 "Created a bounded rotation-cleanup copy. Translation and default-excluded fingers are retained.",
             )
             return {"FINISHED"}
         except Exception as exc:
-            self.report({"ERROR"}, str(exc))
+            translated_report(context, self.report, {"ERROR"}, str(exc))
             return {"CANCELLED"}
 
 
-class BVH_OT_repair_root_gap(Operator):
+class BVH_OT_repair_root_gap(LocalizedOperator, Operator):
     bl_idname = "bvh.repair_root_gap"
     bl_label = "Create Root Repair Copy"
     bl_options = {"REGISTER", "UNDO"}
@@ -89,8 +94,13 @@ class BVH_OT_repair_root_gap(Operator):
             context.view_layer.objects.active = armature
             armature.select_set(True)
             _save_report(result)
-            self.report({"INFO"}, "Created a short root-gap repair copy. Review it against the source video.")
+            translated_report(
+                context,
+                self.report,
+                {"INFO"},
+                "Created a short root-gap repair copy. Review it against the source video.",
+            )
             return {"FINISHED"}
         except Exception as exc:
-            self.report({"ERROR"}, str(exc))
+            translated_report(context, self.report, {"ERROR"}, str(exc))
             return {"CANCELLED"}

@@ -2,6 +2,7 @@ import ast
 import hashlib
 import json
 import re
+import runpy
 import unittest
 from pathlib import Path
 
@@ -34,6 +35,14 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertEqual(read_manifest_string("version"), read_addon_version())
         self.assertEqual(read_manifest_string("id"), "bvh_to_mixamo")
         self.assertIn('license = ["SPDX:MIT"]', manifest_text)
+        entrypoint = ast.parse((PACKAGE / "__init__.py").read_text())
+        metadata = next(
+            ast.literal_eval(node.value)
+            for node in entrypoint.body
+            if isinstance(node, ast.Assign)
+            and any(isinstance(target, ast.Name) and target.id == "bl_info" for target in node.targets)
+        )
+        self.assertEqual(metadata, runpy.run_path(str(PACKAGE / "addon_info.py"))["bl_info"])
 
     def test_presets_are_valid_mapping_objects(self) -> None:
         preset_paths = sorted((PACKAGE / "presets").glob("*.json"))
@@ -58,7 +67,7 @@ class ProjectMetadataTests(unittest.TestCase):
         from scripts.fetch_templates import TEMPLATE_SHA256
 
         templates = sorted((PACKAGE / "templates").glob("*.fbx"))
-        self.assertEqual(len(templates), 6)
+        self.assertEqual({p.name for p in templates}, {"mixamo_default_white.fbx", "mixamo_default_black.fbx"})
         for path in templates:
             with self.subTest(path=path.name):
                 digest = hashlib.sha256(path.read_bytes()).hexdigest()

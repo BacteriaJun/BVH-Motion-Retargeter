@@ -35,6 +35,8 @@ CODE_FILES = frozenset(
         "properties.py",
         "core/__init__.py",
         "core/animation_utils.py",
+        "core/i18n.py",
+        "core/i18n_errors.py",
         "core/armature_utils.py",
         "core/bone_data.py",
         "core/bone_mapping.py",
@@ -101,6 +103,27 @@ def addon_version(text: str | None = None) -> str:
     if not isinstance(value, tuple) or len(value) != 3 or any(type(v) is not int or v < 0 for v in value):
         raise RuntimeError("ADDON_VERSION must be three nonnegative integer components")
     return _version(".".join(str(part) for part in value))
+
+
+def validate_discovery_metadata(entrypoint: str, manifest: str, version: str) -> None:
+    """Blender discovers legacy ZIP add-ons from a literal bl_info dictionary."""
+    assignments = [
+        node.value
+        for node in ast.parse(entrypoint).body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == "bl_info" for target in node.targets)
+    ]
+    try:
+        info = ast.literal_eval(assignments[0]) if len(assignments) == 1 else None
+    except (ValueError, TypeError) as exc:
+        raise RuntimeError("Blender discovery requires literal bl_info metadata") from exc
+    data = tomllib.loads(manifest)
+    if not isinstance(info, dict) or (
+        info.get("version") != tuple(int(part) for part in version.split("."))
+        or info.get("blender") != tuple(int(part) for part in data["blender_version_min"].split("."))
+        or info.get("name") != data["name"]
+    ):
+        raise RuntimeError("Blender discovery bl_info metadata must match the manifest and add-on version")
 
 
 def _allowed(relative):
@@ -202,6 +225,9 @@ def build(output: Path) -> Path:
     code_version = addon_version(payloads["addon_info.py"].decode("utf-8"))
     if version != code_version:
         raise RuntimeError(f"Version mismatch: manifest={version}, addon_info={code_version}")
+    validate_discovery_metadata(
+        payloads["__init__.py"].decode("utf-8"), payloads["blender_manifest.toml"].decode("utf-8"), version
+    )
     missing_templates = REQUIRED_TEMPLATES - {Path(name).name for name in payloads if name.startswith("templates/")}
     if missing_templates:
         raise RuntimeError(

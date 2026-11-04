@@ -1,7 +1,7 @@
 import os
 
 DEFAULT_MAPPING_JSON_FILENAME = "default_mixamo_mapping.json"
-DEFAULT_TEMPLATE_FBX_FILENAME = "mixamo_default_character.fbx"
+DEFAULT_TEMPLATE_FBX_FILENAME = "mixamo_default_white.fbx"
 
 
 def get_addon_dir():

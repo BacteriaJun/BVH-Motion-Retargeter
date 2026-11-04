@@ -8,6 +8,7 @@ from bpy.props import StringProperty
 from bpy.types import Operator
 
 from ..core.armature_utils import ensure_object_mode
+from ..core.i18n import LocalizedOperator, translated_report
 from ..core.mmd_mapping import mixamo_mapping
 from ..core.vmd_blender import (
     SESSION_KEY,
@@ -27,7 +28,7 @@ def _save_report(value):
     text.write(json.dumps(value, ensure_ascii=False, indent=2))
 
 
-class BVH_OT_import_vmd(Operator):
+class BVH_OT_import_vmd(LocalizedOperator, Operator):
     bl_idname = "bvh.import_vmd"
     bl_label = "Import Editable VMD"
     bl_description = (
@@ -39,7 +40,7 @@ class BVH_OT_import_vmd(Operator):
         scene = context.scene
         path = bpy.path.abspath(scene.bvh_vmd_input_path)
         if not path or not Path(path).is_file() or Path(path).suffix.lower() != ".vmd":
-            self.report({"ERROR"}, "Choose an existing .vmd source file.")
+            translated_report(context, self.report, {"ERROR"}, "Choose an existing .vmd source file.")
             return {"CANCELLED"}
         old_active = context.view_layer.objects.active
         old_selected = list(context.selected_objects)
@@ -67,7 +68,9 @@ class BVH_OT_import_vmd(Operator):
             context.view_layer.objects.active = armature
             armature.select_set(True)
             _save_report(report)
-            self.report(
+            translated_report(
+                context,
+                self.report,
                 {"INFO"},
                 f"VMD imported: {report['mapped_bones']} editable bone tracks. Original extra tracks retained.",
             )
@@ -83,11 +86,11 @@ class BVH_OT_import_vmd(Operator):
             for obj in old_selected:
                 obj.select_set(True)
             context.view_layer.objects.active = old_active
-            self.report({"ERROR"}, str(exc))
+            translated_report(context, self.report, {"ERROR"}, str(exc))
             return {"CANCELLED"}
 
 
-class BVH_OT_export_vmd(Operator):
+class BVH_OT_export_vmd(LocalizedOperator, Operator):
     bl_idname = "bvh.export_vmd"
     bl_label = "Export VMD"
     bl_description = "Preserve the imported VMD sections, or explicitly create a new mapped FK motion."
@@ -126,10 +129,12 @@ class BVH_OT_export_vmd(Operator):
                     context, path, armature, mapping, unit_scale=scale, overwrite=scene.bvh_export_overwrite
                 )
             _save_report(report)
-            self.report({"INFO"}, "VMD exported. See the motion report for retained tracks and FK limits.")
+            translated_report(
+                context, self.report, {"INFO"}, "VMD exported. See the motion report for retained tracks and FK limits."
+            )
             return {"FINISHED"}
         except Exception as exc:
-            self.report({"ERROR"}, str(exc))
+            translated_report(context, self.report, {"ERROR"}, str(exc))
             return {"CANCELLED"}
 
 
@@ -137,7 +142,7 @@ def math_sqrt(value):
     return value**0.5
 
 
-class FILE_OT_select_vmd_input(Operator):
+class FILE_OT_select_vmd_input(LocalizedOperator, Operator):
     bl_idname = "file.select_vmd_input"
     bl_label = "Select VMD Source"
     filepath: StringProperty(subtype="FILE_PATH")
@@ -152,7 +157,7 @@ class FILE_OT_select_vmd_input(Operator):
         return {"RUNNING_MODAL"}
 
 
-class FILE_OT_select_vmd_output(Operator):
+class FILE_OT_select_vmd_output(LocalizedOperator, Operator):
     bl_idname = "file.select_vmd_output"
     bl_label = "Select VMD Output"
     filepath: StringProperty(subtype="FILE_PATH")

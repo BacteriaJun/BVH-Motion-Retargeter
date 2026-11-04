@@ -17,7 +17,7 @@ bl_info = {
     "blender": ADDON_BLENDER_VERSION,
     "location": ADDON_LOCATION,
     "description": ADDON_DESCRIPTION,
-    "warning": "4.0.0 RC1: local pre-release validation build",
+    "warning": "",
     "doc_url": ADDON_DOC_URL,
     "category": ADDON_CATEGORY,
 }

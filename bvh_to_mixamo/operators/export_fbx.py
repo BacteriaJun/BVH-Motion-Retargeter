@@ -12,6 +12,7 @@ from ..core.export_profiles import (
     export_armature_by_profile,
     resolve_export_profile,
 )
+from ..core.i18n import LocalizedOperator, translated_report
 from ..core.logger import log_error, log_info
 
 
@@ -34,10 +35,15 @@ def _run_export(context, report, profile=None):
     scene = context.scene
     armature = _get_export_armature(context)
     if not armature:
-        report({"ERROR"}, "Create or select an Armature first, or complete one conversion before exporting.")
+        translated_report(
+            context,
+            report,
+            {"ERROR"},
+            "Create or select an Armature first, or complete one conversion before exporting.",
+        )
         return {"CANCELLED"}
     if not scene.bvh_export_path:
-        report({"ERROR"}, "Set the FBX output path first.")
+        translated_report(context, report, {"ERROR"}, "Set the FBX output path first.")
         return {"CANCELLED"}
     active_profile = profile or resolve_export_profile(scene)
     try:
@@ -52,16 +58,16 @@ def _run_export(context, report, profile=None):
         scene.bvh_last_output_armature = armature.name
         label = {EXPORT_PROFILE_UE5: "UE5", EXPORT_PROFILE_UE4: "UE4"}.get(active_profile, "Mixamo")
         log_info(f"{label} FBXexport completed: {path}")
-        report({"INFO"}, f"{label} FBXexport completed: {path}")
+        translated_report(context, report, {"INFO"}, f"{label} FBXexport completed: {path}")
         return {"FINISHED"}
     except Exception as exc:
         log_error(f"FBX export failed: {exc}")
         log_error(traceback.format_exc())
-        report({"ERROR"}, f"FBX export failed: {exc}")
+        translated_report(context, report, {"ERROR"}, f"FBX export failed: {exc}")
         return {"CANCELLED"}
 
 
-class MIXAMO_OT_export_fbx(Operator):
+class MIXAMO_OT_export_fbx(LocalizedOperator, Operator):
     bl_idname = "mixamo.export_fbx"
     bl_label = "Export with Selected Preset"
     bl_description = "Export the current or most recent output armature using the selected FBX export preset."
@@ -71,7 +77,7 @@ class MIXAMO_OT_export_fbx(Operator):
         return _run_export(context, self.report)
 
 
-class MIXAMO_OT_export_mixamo_fbx(Operator):
+class MIXAMO_OT_export_mixamo_fbx(LocalizedOperator, Operator):
     bl_idname = "mixamo.export_mixamo_fbx"
     bl_label = "Export Mixamo FBX"
     bl_description = "Export the current or most recent output armature with the Mixamo/general FBX preset."
@@ -81,7 +87,7 @@ class MIXAMO_OT_export_mixamo_fbx(Operator):
         return _run_export(context, self.report, profile=EXPORT_PROFILE_MIXAMO)
 
 
-class MIXAMO_OT_export_ue5_fbx(Operator):
+class MIXAMO_OT_export_ue5_fbx(LocalizedOperator, Operator):
     bl_idname = "mixamo.export_ue5_fbx"
     bl_label = "Export UE5 FBX"
     bl_description = "Export the current or most recent output armature with the built-in UE5 FBX preset."
@@ -102,7 +108,7 @@ def export_selected_fbx_for_unreal(filepath):
     return export_armature_to_ue5_fbx(active, filepath, include_mesh=True)
 
 
-class MIXAMO_OT_export_ue4_fbx(Operator):
+class MIXAMO_OT_export_ue4_fbx(LocalizedOperator, Operator):
     bl_idname = "mixamo.export_ue4_fbx"
     bl_label = "Export UE4 FBX"
     bl_description = "Export an Unreal-style humanoid FBX. Retarget to the actual UE4 skeleton in Unreal."

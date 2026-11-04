@@ -1,33 +1,24 @@
 # Changelog
 
-All notable user-visible changes are documented here.
+## 4.0.0
 
-## Unreleased — 4.0.0 RC1
-
-- Added editable VMD import, embedded original-session data, generic FK reference rigs and source-preserving export of all VMD sections.
-- Added explicit new FK VMD export, target mapping, 30 Hz resampling and standard leg/toe IK-disable flags.
-- Added full-width/ASCII name alias matching without altering original records; reject ambiguous bindings.
-- Added bounded SO(3) cleanup copies, video-confirmed short root-packet repair and scale-aware export diagnostics.
-- Added UE4 profile and repaired Unreal horizontal root allocation using world axes; preserve body motion and start new roots at model origin.
-- Fixed layered Action access across Blender 4.2 and 5.x, stale export-object selection, export subframe restoration and silent driver/unsupported-edit loss.
-- Replaced the unavailable FCurve simplify method with bounded reduction for linear baked channels; nonlinear curves and original takes are retained.
-- Repaired short-BVH export ranges and preserved seconds when importing into a different scene frame rate.
-- Removed quadratic long-line source-text storage and per-key curve-update bottlenecks; batch processing preserves frozen VMD output bytes.
-- Added atomic output protection, package file allowlists, template hash verification, MIT attribution and deterministic archives.
-- Added synthetic protocol/native/operator/install regressions and a prepared dual-version headless CI matrix. Target-application acceptance remains separate.
-
-### Previous source maintenance
-
-- Added the maintainable v3.2.0 source tree to the repository.
-- Added reproducible release packaging, repository checks, and GitHub Actions CI.
-- Moved development documentation and tests outside the installable add-on.
-- Added checksum-verified retrieval for large bundled FBX templates.
-- Aligned the Blender extension manifest license with the repository's MIT license.
+- Added an add-on language selector: Auto, 简体中文 and English.
+- Reduced built-in character templates to Black and White; retained custom-model loading and migrated discontinued colour selections to White.
+- Added editable VMD import, embedded source-session data, reference FK/control rigs and source-preserving export across all VMD sections.
+- Added new FK VMD export with target-name mapping, 30 Hz resampling and standard leg/toe IK-disable flags.
+- Added full-width/ASCII finger-name matching while retaining original VMD names; ambiguous bindings produce an explicit error.
+- Added bounded SO(3) denoising copies, video-confirmed short root repair and scale-aware export diagnostics.
+- Added the UE4 FBX profile and corrected Unreal horizontal root allocation in world axes, preserving body motion and starting new roots at the model origin.
+- Fixed Action access across Blender 4.2 and 5.x, export-object selection, frame/subframe restoration and unsupported-edit detection.
+- Added bounded simplification for linear baked curves; retained nonlinear curves and original takes.
+- Corrected short-BVH export ranges and frame-rate conversion to preserve elapsed time.
+- Improved VMD source storage and batched curve updates for larger motions.
+- Corrected add-on discovery metadata and scene initialization during installation; preserved saved settings across project upgrades.
+- Added deterministic installation builds, template hash verification, output-file protection and dual-version native regression workflows.
 
 ## 3.2.0
 
 - Renamed the add-on presentation to **BVH Motion Retargeter**.
-- Polished UI labels, operator descriptions, status messages, and documentation.
-- Added Mixamo, UE5 Humanoid, and VRM Body profiles.
-- Added character templates, automatic FBX export, and VRM knee compensation.
-- Removed the bundled personal VRM test asset from the release package.
+- Polished UI labels, operator descriptions, status messages and documentation.
+- Added Mixamo, UE5 Humanoid and VRM Body profiles.
+- Added character templates, automatic FBX export and VRM knee compensation.

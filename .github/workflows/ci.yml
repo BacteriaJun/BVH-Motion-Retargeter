@@ -122,6 +122,14 @@ jobs:
         run: |
           xvfb-run -a "${{ steps.runtime.outputs.blender_path }}" --background --factory-startup --disable-autoexec --python-exit-code 1 --python tests/blender/test_operators.py -- --output verification/operators
 
+      - name: Native language switching and settings persistence
+        run: |
+          xvfb-run -a "${{ steps.runtime.outputs.blender_path }}" --background --factory-startup --disable-autoexec --python-exit-code 1 --python tests/blender/test_i18n.py -- --output verification/i18n
+
+      - name: Native black white templates and saved preset migration
+        run: |
+          xvfb-run -a "${{ steps.runtime.outputs.blender_path }}" --background --factory-startup --disable-autoexec --python-exit-code 1 --python tests/blender/test_templates.py -- --output verification/templates
+
       - name: Native VMD release counterexamples
         run: |
           xvfb-run -a "${{ steps.runtime.outputs.blender_path }}" --background --factory-startup --disable-autoexec --python-exit-code 1 --python tests/blender/test_vmd_adversarial.py -- --output verification/adversarial

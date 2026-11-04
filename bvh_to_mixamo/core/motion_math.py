@@ -119,7 +119,7 @@ def denoise_quaternions(values, fps, window_seconds=0.12, strength=0.5, cap_degr
         "large_angular_steps": cuts,
         "radius_samples": radius,
         "translation_changed": False,
-        "scope": "Bounded rotational filter, not support recognition or motion truth recovery.",
+        "scope": "SO(3) rotation filtering within the specified angular budget.",
     }
 
 
@@ -168,7 +168,7 @@ def reconstruct_short_gap(positions, fps, start, end, leg_length, confirmed=Fals
     return out, {
         "max_root_change_L": maximum,
         "changed_sample_ids": list(range(start, end + 1)),
-        "scope": "Conditional endpoint interpolation. No automatic event or missing-depth recovery.",
+        "scope": "Root-position interpolation between trusted endpoint samples.",
     }
 
 

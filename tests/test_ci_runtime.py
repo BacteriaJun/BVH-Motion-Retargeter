@@ -177,12 +177,33 @@ class RuntimeBootstrapTests(unittest.TestCase):
         self.assertEqual(sentinel.read_text(), "existing directory")
         self.assertFalse(list(self.root.glob(".blender-ci-*")))
 
-    def test_native_reports_cannot_pass_on_exit_code_alone(self):
+    def _native_reports(self):
         reports = self.root / "reports"
         for relative in fetch.NATIVE_REPORTS:
             path = reports / relative
             path.parent.mkdir(parents=True, exist_ok=True)
-            if relative in ("vmd/verification.json", "operators/verification.json"):
+            if relative in fetch.NAMED_REPORT_CHECKS:
+                result = {
+                    "all_passed": True,
+                    "checks": dict.fromkeys(fetch.NAMED_REPORT_CHECKS[relative], True),
+                    "blender_version": "4.2.0",
+                }
+                if relative.startswith("i18n/"):
+                    result.pop("all_passed")
+                    result["blender"] = result.pop("blender_version")
+                    result.update(catalog_entries=400, cached_enum_tables=2, global_preferences_unchanged=True)
+                else:
+                    result["assets"] = [
+                        {
+                            "filename": "mixamo_default_" + colour + ".fbx",
+                            "sha256": "a" * 64,
+                            "bones": 50,
+                            "meshes": 2,
+                            "vertices": 27850,
+                        }
+                        for colour in ("white", "black")
+                    ]
+            elif relative in ("vmd/verification.json", "operators/verification.json"):
                 result = {"all_passed": True, "checks": {"test": True}, "blender_version": "4.2.0"}
             else:
                 result = {
@@ -194,6 +215,10 @@ class RuntimeBootstrapTests(unittest.TestCase):
             if relative == "adversarial/report.json":
                 result["source_file_unchanged"] = True
             path.write_text(json.dumps(result))
+        return reports
+
+    def test_native_reports_cannot_pass_on_exit_code_alone(self):
+        reports = self._native_reports()
         self.assertEqual(fetch.verify_reports(reports, "4.2.0"), list(fetch.NATIVE_REPORTS))
         p = reports / "adversarial/report.json"
         data = json.loads(p.read_text())
@@ -212,6 +237,74 @@ class RuntimeBootstrapTests(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             fetch.verify_reports(reports, "4.2.0")
 
+    def test_new_native_reports_require_complete_successful_checks(self):
+        reports = self._native_reports()
+        for relative, required in fetch.NAMED_REPORT_CHECKS.items():
+            path = reports / relative
+            original = json.loads(path.read_text())
+            check = next(iter(required))
+            for value in (False, 1, None):
+                data = json.loads(json.dumps(original))
+                data["checks"][check] = value
+                path.write_text(json.dumps(data))
+                with self.subTest(report=relative, value=value), self.assertRaises(RuntimeError):
+                    fetch.verify_reports(reports, "4.2.0")
+            data = json.loads(json.dumps(original))
+            del data["checks"][check]
+            path.write_text(json.dumps(data))
+            with self.subTest(report=relative, missing_check=check), self.assertRaises(RuntimeError):
+                fetch.verify_reports(reports, "4.2.0")
+            path.write_text(json.dumps(original))
+            path.unlink()
+            with self.subTest(report=relative, missing_file=True), self.assertRaises(FileNotFoundError):
+                fetch.verify_reports(reports, "4.2.0")
+            path.write_text(json.dumps(original))
+
+    def test_i18n_gate_requires_global_preferences_and_actual_catalogue(self):
+        reports = self._native_reports()
+        path = reports / "i18n/i18n_report.json"
+        original = json.loads(path.read_text())
+        for key, value in [
+            ("global_preferences_unchanged", False),
+            ("global_preferences_unchanged", 1),
+            ("catalog_entries", 0),
+            ("catalog_entries", True),
+            ("cached_enum_tables", 0),
+            ("cached_enum_tables", "2"),
+            ("blender", "5.1.2"),
+        ]:
+            data = {**original, key: value}
+            path.write_text(json.dumps(data))
+            with self.subTest(key=key, value=value), self.assertRaises(RuntimeError):
+                fetch.verify_reports(reports, "4.2.0")
+
+    def test_template_gate_requires_two_distinct_native_assets(self):
+        reports = self._native_reports()
+        path = reports / "templates/verification.json"
+        original = json.loads(path.read_text())
+        cases = []
+        for key, value in [
+            ("filename", "mixamo_default_pink.fbx"),
+            ("sha256", "not a digest"),
+            ("bones", 0),
+            ("meshes", True),
+            ("vertices", -1),
+        ]:
+            data = json.loads(json.dumps(original))
+            data["assets"][0][key] = value
+            cases.append(data)
+        cases.extend(
+            [
+                {**original, "all_passed": False},
+                {**original, "assets": []},
+                {**original, "assets": [original["assets"][0]] * 2},
+            ]
+        )
+        for index, data in enumerate(cases):
+            path.write_text(json.dumps(data))
+            with self.subTest(case=index), self.assertRaises(RuntimeError):
+                fetch.verify_reports(reports, "4.2.0")
+
     def test_workflow_pins_versions_and_read_only_permissions(self):
         workflow = (ROOT / ".github/workflows/ci.yml").read_text()
         self.assertIn("contents: read", workflow)
@@ -228,6 +321,8 @@ class RuntimeBootstrapTests(unittest.TestCase):
             "test_install.py",
             "test_retarget.py",
             "test_character_pipeline.py",
+            "test_i18n.py",
+            "test_templates.py",
         ]:
             self.assertTrue((ROOT / "tests/blender" / script).is_file())
             self.assertIn("tests/blender/" + script, workflow)

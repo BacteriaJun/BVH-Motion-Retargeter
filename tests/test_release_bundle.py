@@ -46,6 +46,13 @@ class ReleaseArchiveTests(unittest.TestCase):
             self.assertTrue(all(n.startswith("bvh_to_mixamo/") for n in z.namelist()))
             self.assertTrue(all(i.date_time == (1980, 1, 1, 0, 0, 0) for i in z.infolist()))
             self.assertIn("bvh_to_mixamo/core/vmd_codec.py", z.namelist())
+            self.assertEqual(
+                {name for name in z.namelist() if name.endswith(".fbx")},
+                {
+                    "bvh_to_mixamo/templates/mixamo_default_white.fbx",
+                    "bvh_to_mixamo/templates/mixamo_default_black.fbx",
+                },
+            )
             self.assertEqual(z.read("bvh_to_mixamo/LICENSE.txt"), (self.root / "LICENSE").read_bytes())
 
     def test_private_capture_artifacts_never_enter_install_archive(self):
@@ -68,6 +75,15 @@ class ReleaseArchiveTests(unittest.TestCase):
         with zipfile.ZipFile(output) as z:
             present = sorted(set(z.namelist()) & {"bvh_to_mixamo/" + n for n in planted})
         self.assertEqual(present, [], "Private capture/test media were included in the installation archive")
+
+    def test_blender_discovery_version_mismatch_preserves_previous_archive(self):
+        entrypoint = self.package / "__init__.py"
+        entrypoint.write_text(entrypoint.read_text().replace('"version": (4, 0, 0)', '"version": (3, 2, 0)'))
+        output = self.root / "existing.zip"
+        output.write_bytes(b"PREVIOUS ARCHIVE")
+        with self.assertRaisesRegex(RuntimeError, "bl_info metadata"):
+            self.builder.build(output)
+        self.assertEqual(output.read_bytes(), b"PREVIOUS ARCHIVE")
 
     def test_unknown_python_reference_is_rejected(self):
         (self.package / "core/upstream_mmd_vmd_reference.py").write_text("# External reference; not product code")

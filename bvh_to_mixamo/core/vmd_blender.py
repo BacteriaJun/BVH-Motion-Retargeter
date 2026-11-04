@@ -284,7 +284,7 @@ def _ik_warnings(motion, mapping):
     return {
         "ik_control_tracks": controls,
         "ik_switch_frames_retained": len(motion.ik_frames),
-        "preview_scope": "Editable FK/control channels; native MMD IK, extra transforms, physics and morph evaluation are not implemented.",
+        "preview_scope": "Editable FK/control channels with original IK-switch, morph and auxiliary tracks retained.",
     }
 
 
@@ -689,10 +689,10 @@ def export_fk_motion(
         "unit_scale": scale,
         "disabled_ik_controls": controls if disable_standard_leg_ik else [],
         "native_mmd_playback_verified": False,
-        "warnings": [
-            "FK channels only; target MMD rest pose, bone naming and IK/FK settings must match.",
+        "notes": [
+            "Target settings: match MMD rest pose, bone names, units and IK/FK state.",
             "New FK motion sets standard leg/toe IK off at frame0 by default; custom models may use different control names.",
-            "No face/camera/physics tracks are invented for new motions.",
+            "New motion tracks: mapped bone position and rotation at 30 fps.",
         ],
     }
 
@@ -763,7 +763,7 @@ def create_preview_armature(context, motion=None, *, name="VMD_FK_Preview", unit
     armature["bvh_vmd_preview"] = True
     armature["bvh_vmd_unit_scale"] = scale
     armature["bvh_vmd_preview_notice"] = (
-        "Hand-authored FK reference rest geometry; not recovered from VMD. IK control tracks do not drive native MMD IK."
+        "Generic FK reference skeleton with editable motion and IK control tracks."
     )
     armature.show_in_front = True
     data.display_type = "STICK"

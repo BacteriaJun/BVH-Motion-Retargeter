@@ -5,6 +5,7 @@ from bpy.types import Panel
 from ..addon_info import ADDON_VERSION
 from ..core.armature_utils import get_selected_mixamo_armature
 from ..core.bone_mapping import MAPPING_PRESET_DEFAULT
+from ..core.i18n import CONTEXT, TranslatedLayout
 from ..core.paths import get_default_mapping_json_path, get_default_template_fbx_path
 from ..core.template_loader import TEMPLATE_PRESET_CUSTOM_FBX, TEMPLATE_REGISTRY
 from ..core.ue5_profile import TARGET_UE4_BASIC, TARGET_UE5_BASIC
@@ -73,6 +74,7 @@ def draw_vmd_workflow(layout, scene):
 class MIXAMO_PT_panel(Panel):
     bl_idname = "MIXAMO_PT_main_panel"
     bl_label = "BVH Motion Retargeter"
+    bl_translation_context = CONTEXT
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "BVH Retarget"
@@ -81,9 +83,10 @@ class MIXAMO_PT_panel(Panel):
         self.layout.label(icon="ARMATURE_DATA")
 
     def draw(self, context):
-        layout = self.layout
+        layout = TranslatedLayout(self.layout, context)
         layout.scale_y = 1.05
         scene = context.scene
+        layout.prop(scene, "bvh_ui_language", text="Language / 界面语言")
         layout.prop(scene, "bvh_source_format", expand=True)
         if scene.bvh_source_format == "VMD":
             draw_vmd_workflow(layout, scene)
@@ -123,7 +126,7 @@ class MIXAMO_PT_panel(Panel):
             box.prop(scene, "bvh_ue5_add_auxiliary_bones")
             col = box.column(align=True)
             col.scale_y = 0.85
-            col.label(text="UE5 profile: root → pelvis → spine_01", icon="INFO")
+            col.label(text="UE profile: root → pelvis → spine_01", icon="INFO")
             col.label(text="Optional IK/twist helper bones are non-deforming.")
         elif scene.bvh_target_skeleton == TARGET_VRM_BODY:
             col = box.column(align=True)
@@ -144,7 +147,7 @@ class MIXAMO_PT_panel(Panel):
                 selected_armatures = [obj for obj in context.selected_objects if obj.type == "ARMATURE"]
                 selected = selected_armatures[0] if selected_armatures else None
                 if selected:
-                    box.label(text=f"Selected VRM armature: {selected.name}", icon="CHECKMARK")
+                    box.label(text=box.t("Selected VRM armature: {name}", name=selected.name), icon="CHECKMARK")
                 else:
                     row = box.row()
                     row.alert = True
@@ -152,7 +155,7 @@ class MIXAMO_PT_panel(Panel):
             else:
                 selected = get_selected_mixamo_armature()
                 if selected:
-                    box.label(text=f"Selected target: {selected.name}", icon="CHECKMARK")
+                    box.label(text=box.t("Selected target: {name}", name=selected.name), icon="CHECKMARK")
                 else:
                     row = box.row()
                     row.alert = True
@@ -163,9 +166,12 @@ class MIXAMO_PT_panel(Panel):
             sub.prop(scene, "bvh_template_preset", text="")
             if scene.bvh_template_preset != TEMPLATE_PRESET_CUSTOM_FBX:
                 template_info = TEMPLATE_REGISTRY.get(scene.bvh_template_preset, {})
-                filename = template_info.get("filename", "mixamo_default_character.fbx")
+                filename = template_info.get("filename", "mixamo_default_white.fbx")
                 path = os.path.join(os.path.dirname(get_default_template_fbx_path()), filename)
-                sub.label(text=f"Built-in template: {template_info.get('name', 'Default Character')}", icon="CHECKMARK")
+                sub.label(
+                    text=sub.t("Built-in template: {name}", name=sub.t(template_info.get("name", "Default White"))),
+                    icon="CHECKMARK",
+                )
                 if not os.path.exists(path):
                     row = sub.row()
                     row.alert = True
@@ -194,7 +200,7 @@ class MIXAMO_PT_panel(Panel):
         box.prop(scene, "bvh_export_overwrite")
         box.prop(scene, "bvh_export_allow_discontinuities")
         if scene.bvh_last_output_armature:
-            box.label(text=f"Last output: {scene.bvh_last_output_armature}", icon="CHECKMARK")
+            box.label(text=box.t("Last output: {name}", name=scene.bvh_last_output_armature), icon="CHECKMARK")
         row = box.row()
         row.scale_y = 1.35
         row.operator("mixamo.export_fbx", text="Export with Selected Preset", icon="EXPORT")
@@ -216,11 +222,11 @@ class MIXAMO_PT_panel(Panel):
             row.operator("mixamo.convert_bvh", text="Create Target Armature", icon="ARMATURE_DATA")
 
         box = layout.box()
-        box.label(text="BVH Motion Retargeter " + ".".join(map(str, ADDON_VERSION)) + " RC", icon="INFO")
+        box.label(text=box.t("BVH Motion Retargeter {version}", version=".".join(map(str, ADDON_VERSION))), icon="INFO")
         col = box.column(align=True)
         col.scale_y = 0.85
         col.label(text="• Stable Constraint Bake retargeting pipeline")
         col.label(text="• VMD, Mixamo, UE4/UE5 and VRM Body workflows")
-        col.label(text="• Built-in Mixamo character material variants")
-        col.label(text="• Integrated Mixamo and UE5 FBX export presets")
+        col.label(text="• Black and white Mixamo characters")
+        col.label(text="• Integrated Mixamo and UE4/UE5 FBX export presets")
         col.label(text="• VRM body-only mapping with knee compensation controls")

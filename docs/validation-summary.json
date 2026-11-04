@@ -1,13 +1,20 @@
 {
-  "candidate": "4.0.0 RC1",
-  "published": false,
+  "version": "4.0.0",
+  "verification_date": "2026-11-04",
   "base_commit": "b2a36865b2e7bd4ce731771f2f114510849efedf",
-  "unit_tests_passed": 40,
+  "unit_tests_passed": 57,
   "ruff_passed": true,
   "compile_passed": true,
-  "install_zip_sha256": "bb00f5fe05a86be43380e5dd0a45ec8b0876a8b0a845489c6ba046e693baa753",
-  "install_zip_bytes": 15256884,
+  "install_zip_sha256": "0de8710444d3d5b0d110e51e1b6c0dd31b7509cb521c79d6ee3bb50b4f1750b5",
+  "install_zip_bytes": 5463054,
   "package_matches_final_source": true,
+  "deterministic_rebuild": true,
+  "bundled_templates": [
+    "Black",
+    "White"
+  ],
+  "previous_six_model_zip_bytes": 15256884,
+  "size_reduction_percent": 64.19,
   "local_native": {
     "4.2.0": {
       "all_passed": true,
@@ -19,10 +26,14 @@
         "adversarial",
         "retarget",
         "character",
+        "i18n",
+        "templates",
         "install"
       ],
+      "checks_passed": 96,
       "exact_install_zip_tested": true,
-      "isolated_user_preferences": true
+      "isolated_user_preferences": true,
+      "product_source_unchanged_during_run": true
     },
     "5.1.2": {
       "all_passed": true,
@@ -34,11 +45,33 @@
         "adversarial",
         "retarget",
         "character",
+        "i18n",
+        "templates",
         "install"
       ],
+      "checks_passed": 96,
       "exact_install_zip_tested": true,
-      "isolated_user_preferences": true
+      "isolated_user_preferences": true,
+      "product_source_unchanged_during_run": true
     }
+  },
+  "interface": {
+    "languages": [
+      "Auto",
+      "简体中文",
+      "English"
+    ],
+    "catalog_entries": 413,
+    "main_panel_independent_of_Blender_translation_preferences": true,
+    "global_Blender_preferences_unchanged": true,
+    "RNA_tooltips_follow_Blender_tooltip_translation_setting": true,
+    "language_saved_with_project": true
+  },
+  "legacy_project_upgrade": {
+    "real_static_enum_files_tested": true,
+    "discontinued_colours_migrate_to": "White",
+    "black_white_custom_and_custom_paths_preserved": true,
+    "later_selection_preserved_after_reopen": true
   },
   "real_VMD_captures": {
     "count": 2,

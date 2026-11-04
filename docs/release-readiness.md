@@ -1,39 +1,36 @@
-# 4.0.0 RC1 release preparation
+# 4.0.0 release checks
 
-This is an **unreleased local candidate**. Preparing this source and its CI does not publish a GitHub release, push a branch, or certify target-application playback.
+## Feature and verification record
 
-## Scope
+| Area | Verified behaviour / status |
+| --- | --- |
+| VMD | Editable bone/control Actions; byte-exact untouched export; changed-track export retains other bone and nonbone records; saved sessions reopen. |
+| Real VMD files | Two captures, 287/499 frames and 52 bone tracks each: untouched byte roundtrip, full-width finger aliases, editable cleanup copies and saved-file reopening. |
+| Cleanup | Separate object/Action; default root-location, finger and IK-rotation preservation; bounded filtering and two-sided short root repair. |
+| FBX / root | Mixamo/UE4/UE5 native Blender export/reimport; world-axis root allocation; sampled body-marker trajectories retained. |
+| Local native runtime | macOS arm64, Blender 4.2.0 and 5.1.2: VMD, cleanup, FBX, retargeting, character binding, operators, language switching, template migration, adversarial cases and isolated installation. |
+| Interface / templates | Auto, 简体中文 and English; Black/White templates plus Custom; discontinued template choices migrate to White. |
+| Build | Version agreement, package-file allowlist, two SHA256-verified templates, MIT attribution and deterministic archives. |
+| GitHub CI | Current public main `b2a3686` passed. The new dual-version workflow obtains its result after the 4.0.0 source commit is pushed. |
+| Target-application checks | MikuMikuDance/PMX playback and Unreal Editor import remain to be checked in the intended model/project. |
 
-- VMD → editable Blender Action → preserved VMD, including original nonbone tracks and unmapped records.
-- Explicitly mapped new FK VMD export from compatible rigs. New FK files disable standard leg/toe IK; calibrate the target MMD model rest pose and units.
-- Generic reference FK geometry for reviewing VMD without a PMX model. Source IK switches are preserved; this reference does not evaluate native MMD IK, append transforms, morphs or physics.
-- Bounded rotation cleanup, optional video-confirmed short root-packet repair, and scale-aware export diagnostics. Original objects/Actions are retained.
-- Mixamo and generic UE4/UE5 humanoid FBX profiles, sampled every frame with no exporter key reduction.
-- Legacy 4.2 Actions and modern layered Actions share the same access layer.
+The reference armature edits FK/control tracks and retains source IK-switch fields. The corresponding MMD model environment supplies model-specific IK, append transforms, facial deformation and physics.
 
-## Evidence boundaries
-
-Local native tests run on macOS arm64 Blender 4.2.0 and 5.1.2. The prepared Linux CI workflow has not run on GitHub during this task. Windows runtime, MikuMikuDance playback and Unreal Editor import are separate acceptance checks; FBX reimport in Blender and an independent VMD reader are not substitutes for them.
-
-The user supplied two real VMD captures during preparation. Their untouched roundtrips, alias mapping, editable copies and nonbone preservation are checked privately. Customer VMD/BVH/video/FBX, their raw content and external reference implementations must stay outside public source and installation ZIPs. Public tests generate original synthetic fixtures.
-
-## Before a public release
-
-1. Review the local candidate and run the committed CI on the intended release commit.
-2. Play the edited VMD on the intended MMD models, including IK-enabled legs and fingers. Review source intent and the target model's rest/IK configuration.
-3. Import animation-only and character FBX into the actual UE4/UE5 projects; select/retarget to the intended Skeleton and check root motion, scale and frame rate.
-4. Validate the supported customer operating systems and compare the source and candidate animations visually.
-5. Review the changelog, exact installation ZIP, source commit and checksums. The release asset must be built from that reviewed source; never include private validation directories.
-
-## Reproduce
+## Reproduce repository checks and build
 
 ```sh
+python -m pip install ruff==0.14.4
 python scripts/fetch_templates.py
-python -m unittest discover -s tests -v
+ruff check .
 python -m compileall -q bvh_to_mixamo scripts tests
-python scripts/build_release.py --output /absolute/path/candidate.zip
+python -m unittest discover -s tests -v
+python scripts/build_release.py --output /absolute/path/bvh_motion_retargeter_v4.0.0_release.zip
 ```
 
-For native commands see `.github/workflows/ci.yml`. Every Blender test uses factory startup, disabled automatic scripts and a nonzero Python-error exit code. Installation tests additionally use fresh `BLENDER_USER_CONFIG` and `BLENDER_USER_SCRIPTS` directories. `scripts/fetch_blender.py --verify-reports ...` validates reports independently of process exit status.
+Run native tests using the commands in [`ci.yml`](../.github/workflows/ci.yml). They use factory startup and isolated user directories for installation checks. Validate the resulting reports:
 
-The installation builder rejects unreviewed modules, capture/media files and symlinks, verifies all six original template hashes, includes the MIT attribution and produces deterministic ZIP bytes. The source's `bl_info` marks RC1; remove that candidate label only after acceptance of the release commit.
+```sh
+python scripts/fetch_blender.py --verify-reports /absolute/path/verification --expected-version 4.2.0
+```
+
+Repeat with 5.1.2. Record the source commit, final ZIP SHA256 and matching native reports for the release. The installation ZIP contains runtime code and the two character templates; development tests, local captures and verification outputs remain outside it.

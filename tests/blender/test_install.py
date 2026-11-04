@@ -51,6 +51,11 @@ def run(package: Path, output: Path):
     props_before = {p for p in dir(bpy.types.Scene) if p.startswith("bvh_")}
     result = bpy.ops.preferences.addon_install(filepath=str(package), overwrite=False)
     assert "FINISHED" in result, result
+    import addon_utils
+
+    discovered = next(module for module in addon_utils.modules(refresh=True) if module.__name__ == "bvh_to_mixamo")
+    assert discovered.bl_info["name"] == "BVH Motion Retargeter"
+    assert discovered.bl_info["version"] == (4, 0, 0)
     checks["actual_preferences_addon_install"] = True
     result = bpy.ops.preferences.addon_enable(module="bvh_to_mixamo")
     assert "FINISHED" in result, result
@@ -60,6 +65,11 @@ def run(package: Path, output: Path):
     assert bpy.context.preferences.addons.get("bvh_to_mixamo") is not None
     introduced = {p for p in dir(bpy.types.Scene) if p.startswith("bvh_")} - props_before
     assert len(introduced) >= 30
+    # Background scripts do not tick UI timers. Exercise its normal-context
+    # callback explicitly, then remove the timer as Blender would on None.
+    if bpy.app.timers.is_registered(addon._deferred_initialize):
+        assert addon._deferred_initialize() is None
+        bpy.app.timers.unregister(addon._deferred_initialize)
     checks["actual_addon_enable_from_isolated_installed_files"] = True
     from bvh_to_mixamo.core import vmd_codec as codec
 
@@ -91,9 +101,12 @@ def run(package: Path, output: Path):
     assert bpy.context.preferences.addons.get("bvh_to_mixamo") is None
     assert not (introduced & set(dir(bpy.types.Scene)))
     assert all(not cls.is_registered for cls in addon.classes)
+    assert not bpy.app.timers.is_registered(addon._deferred_initialize)
+    assert addon._on_project_load not in bpy.app.handlers.load_post
     checks["actual_addon_disable_unregisters_classes_and_properties"] = True
     assert "FINISHED" in bpy.ops.preferences.addon_enable(module="bvh_to_mixamo")
     assert "FINISHED" in bpy.ops.preferences.addon_disable(module="bvh_to_mixamo")
+    assert not bpy.app.timers.is_registered(addon._deferred_initialize)
     checks["installed_enable_disable_second_cycle"] = True
     assert hashlib.sha256(package.read_bytes()).hexdigest() == source_hash
     checks["input_install_ZIP_unchanged"] = True

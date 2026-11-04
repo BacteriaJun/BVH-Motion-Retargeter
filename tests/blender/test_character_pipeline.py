@@ -134,7 +134,7 @@ def main():
 
     def character_pipeline():
         bpy.ops.wm.read_factory_settings(use_empty=True)
-        asset = ROOT / "bvh_to_mixamo/templates/mixamo_default_character.fbx"
+        asset = ROOT / "bvh_to_mixamo/templates/mixamo_default_white.fbx"
         asset_sha = digest(asset)
         assert asset_sha == TEMPLATE_SHA256[asset.name]
         source_path = folder / "character_source.bvh"

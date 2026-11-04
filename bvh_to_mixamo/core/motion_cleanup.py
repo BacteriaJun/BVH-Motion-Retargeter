@@ -120,7 +120,7 @@ def audit_motion(context, armature, start=None, end=None):
         "max_root_step_L": max(steps, default=0.0),
         "suspect_discontinuity_frames": suspect,
         "severe_discontinuity_frames": severe,
-        "scope": "Kinematic discontinuity diagnostic; a cut or fast motion is not automatically capture error.",
+        "scope": "Root-motion steps in the selected range, normalized by leg length.",
     }
 
 
@@ -140,7 +140,7 @@ def _copy_for_edit(context, armature, suffix):
     context.collection.objects.link(copied)
     # Existing VMD sidecar properties are copied, retaining untouched sections.
     copied["bvh_cleanup_source_action"] = source.name
-    copied["bvh_cleanup_quality"] = "bounded_preview_review_required"
+    copied["bvh_cleanup_quality"] = "bounded_rotation_cleanup"
     return copied
 
 

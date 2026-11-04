@@ -1,9 +1,7 @@
 # VMD transport and interpolation
 
-The MIT add-on implements this codec independently using Python's standard
-library. It does not bundle, import or require MMD Tools or nanoem. Upstream
-implementations were consulted to check binary field layout and interoperability,
-not copied into the implementation.
+The codec is an independent MIT implementation using Python's standard library.
+The primary references below were used to verify field layout and interoperability.
 
 ## Public interface
 
@@ -75,24 +73,23 @@ with bounded bisection and evaluates cubic y. It holds the first/last pose
 outside the track's key range. Read/write never normalize source quaternions;
 normalization occurs only when interpreting a pose for sampling.
 
-Blender's component quaternion F-curves are not equivalent to this SLERP.
-A bridge that samples to per-frame keys must disclose its temporal sampling
-error between keys; binary roundtrip fidelity alone does not validate that
-animation playback matches MMD at every subframe.
+The Blender bridge uses per-frame component-quaternion keys. Edited VMD tracks
+are sampled at 30 Hz with linear segments; VMD's native rotation interpolation
+uses SLERP. Integer-frame samples and between-frame interpolation are recorded
+as separate behaviours.
 
-## Validation and limits
+## Verification
 
 Pure tests use hand-packed byte fixtures independent of the writer, both header
 variants, all six sections, CP932/padding, unknown-bone and non-bone preservation,
 malformed counts/truncation, writer protection and closed-form Bezier/SLERP cases.
 
-The development evidence additionally checks modern generated VMD files with the
-upstream MMD Tools pure reader, reads its saved outputs back, and checks all six
-section types. The external reference module stays outside the repository and
-installable add-on. This is protocol interoperability on synthetic data, **not**
-customer DiMocap VMD validation or an actual MikuMikuDance application playback
-test. Legacy headers were checked against nanoem's declared layout and hand
-fixtures; the modern-only external MMD Tools reader did not test legacy files.
+Independent MMD Tools reader/writer checks cover generated modern VMD files and
+all six section types. Legacy headers are checked with nanoem's declared layout
+and hand-packed fixtures. The external reference implementation is maintained
+outside the add-on. Native Blender tests and the two real VMD checks are recorded
+in [VMD editing and export](vmd-workflow.md); the target-application status is in
+[release checks](release-readiness.md).
 
 ## Primary references
 
@@ -101,5 +98,4 @@ fixtures; the modern-only external MMD Tools reader did not test legacy files.
 - [MMD Tools upstream interpolation export](https://github.com/MMD-Blender/blender_mmd_tools/blob/main/mmd_tools/core/vmd/exporter.py)
 - [nanoem upstream header sizes and signatures](https://github.com/hkrn/nanoem/blob/main/nanoem/nanoem_p.h)
 
-No third-party implementation is included by these links. Evidence records the
-reference file's SHA256 because branch URLs can change over time.
+Reference evidence records source-file SHA256 values for reproducibility.

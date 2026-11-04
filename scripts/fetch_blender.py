@@ -36,7 +36,32 @@ NATIVE_REPORTS = (
     "install/verification.json",
     "retarget/verification.json",
     "character/verification.json",
+    "i18n/i18n_report.json",
+    "templates/verification.json",
 )
+NAMED_REPORT_CHECKS = {
+    "i18n/i18n_report.json": frozenset(
+        {
+            "language_switch_keeps_data_and_global_blender_preferences",
+            "all_main_panel_branches_in_both_languages",
+            "enum_identifiers_values_and_cached_strings_are_stable",
+            "native_rna_translation_context",
+            "operator_descriptions_reports_and_dynamic_core_errors",
+            "language_saved_and_restored_with_project_without_losing_settings",
+            "auto_follows_blender_preference",
+            "repeated_registration_has_no_rna_handler_or_translation_leaks",
+        }
+    ),
+    "templates/verification.json": frozenset(
+        {
+            "both_black_white_assets_native_import_and_weights",
+            "retired_numeric_choices_migrate_to_white_and_preserve_paths",
+            "retired_string_identifiers_migrate_to_white",
+            "white_black_custom_current_choices_and_string_storage_preserved",
+            "saved_project_load_post_migrates_retired_preset",
+        }
+    ),
+}
 
 
 def runtime_spec(version):
@@ -182,6 +207,37 @@ def _reject_json_constant(value):
     raise ValueError("Nonfinite JSON constant in a native test report: " + value)
 
 
+def _verify_named_report(relative, data):
+    checks = data.get("checks")
+    if (
+        not isinstance(checks, dict)
+        or not NAMED_REPORT_CHECKS[relative].issubset(checks)
+        or any(value is not True for value in checks.values())
+    ):
+        raise RuntimeError("Required native checks did not all pass: " + relative)
+    if relative == "i18n/i18n_report.json":
+        if data.get("global_preferences_unchanged") is not True or any(
+            type(data.get(key)) is not int or data[key] <= 0 for key in ("catalog_entries", "cached_enum_tables")
+        ):
+            raise RuntimeError("Language report is missing preferences or catalogue evidence")
+        return
+    assets = data.get("assets")
+    if data.get("all_passed") is not True or not isinstance(assets, list) or len(assets) != 2:
+        raise RuntimeError("Template report must contain both successful asset imports")
+    names = []
+    for asset in assets:
+        if not isinstance(asset, dict) or any(
+            type(asset.get(key)) is not int or asset[key] <= 0 for key in ("bones", "meshes", "vertices")
+        ):
+            raise RuntimeError("Template report is missing native geometry counts")
+        digest = asset.get("sha256")
+        if not isinstance(digest, str) or len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest):
+            raise RuntimeError("Template report has an invalid asset SHA256")
+        names.append(asset.get("filename"))
+    if sorted(names, key=str) != ["mixamo_default_black.fbx", "mixamo_default_white.fbx"]:
+        raise RuntimeError("Template report must identify the shipped Black and White assets")
+
+
 def verify_reports(directory, expected_version=None):
     """A process exiting zero is insufficient when a test collects failures."""
     if expected_version is not None:
@@ -199,7 +255,9 @@ def verify_reports(directory, expected_version=None):
         ):
             raise RuntimeError("Native report came from an unexpected Blender runtime: " + relative)
         checks = data.get("checks")
-        if "all_passed" in data:
+        if relative in NAMED_REPORT_CHECKS:
+            _verify_named_report(relative, data)
+        elif "all_passed" in data:
             if (
                 data["all_passed"] is not True
                 or not isinstance(checks, dict)
