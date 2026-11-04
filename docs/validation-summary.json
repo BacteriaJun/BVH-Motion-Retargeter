@@ -1,0 +1,62 @@
+{
+  "candidate": "4.0.0 RC1",
+  "published": false,
+  "base_commit": "b2a36865b2e7bd4ce731771f2f114510849efedf",
+  "unit_tests_passed": 40,
+  "ruff_passed": true,
+  "compile_passed": true,
+  "install_zip_sha256": "bb00f5fe05a86be43380e5dd0a45ec8b0876a8b0a845489c6ba046e693baa753",
+  "install_zip_bytes": 15256884,
+  "package_matches_final_source": true,
+  "local_native": {
+    "4.2.0": {
+      "all_passed": true,
+      "groups": [
+        "vmd",
+        "cleanup",
+        "fbx",
+        "operators",
+        "adversarial",
+        "retarget",
+        "character",
+        "install"
+      ],
+      "exact_install_zip_tested": true,
+      "isolated_user_preferences": true
+    },
+    "5.1.2": {
+      "all_passed": true,
+      "groups": [
+        "vmd",
+        "cleanup",
+        "fbx",
+        "operators",
+        "adversarial",
+        "retarget",
+        "character",
+        "install"
+      ],
+      "exact_install_zip_tested": true,
+      "isolated_user_preferences": true
+    }
+  },
+  "real_VMD_captures": {
+    "count": 2,
+    "frames": [
+      287,
+      499
+    ],
+    "editable_bones_each": 52,
+    "fullwidth_finger_aliases_each": 28,
+    "untouched_byte_exact": true,
+    "cleaned_candidates_unchanged_by_performance_optimization": true,
+    "customer_data_bundled_in_public_source": false
+  },
+  "independent_VMD_reader_checks": 13,
+  "remote_GitHub_CI_run": false,
+  "MMD_native_playback_verified": false,
+  "Unreal_Editor_playback_verified": false,
+  "platforms_tested": [
+    "macOS arm64"
+  ]
+}

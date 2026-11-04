@@ -7,3 +7,5 @@ select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.ruff.lint.per-file-ignores]
 "bvh_to_mixamo/__init__.py" = ["F401"]
+
+"tests/blender/*.py" = ["E402"]

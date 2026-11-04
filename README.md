@@ -1,5 +1,26 @@
 # BVH Motion Retargeter
 
+> **4.0.0 RC1 is an unreleased local candidate.** Priorities: editable VMD, Mixamo FBX, and UE4/UE5 FBX. The release badge below still refers to the published version.
+
+## Editable VMD workflow
+
+Select **VMD** in the sidebar, import to the generic **Reference Preview** or a compatible selected MMD rig, edit the Action or create a bounded denoised copy, then **Preserve Imported VMD** on export. Untouched files retain their original bytes. Edited mapped bones are resampled at 30 Hz; original morph, camera, light, shadow, IK-switch and unmapped tracks are retained.
+
+VMD has no rest skeleton. Reference geometry is for FK/control-channel review; native MMD IK, append transforms, model morphs and physics require the appropriate model environment. Name aliases resolve full-width/ASCII digits without renaming original VMD records; ambiguous bindings are rejected.
+
+Explicit **New FK Motion** export also accepts mapped BVH/Mixamo motion. Match target MMD rest axes and units; new FK files explicitly disable standard leg/toe IK. Source-preserving export keeps the original IK switches and time origin.
+
+[Detailed VMD workflow](docs/vmd-workflow.md) · [Root-motion validation](docs/root-motion-validation.md) · [Release readiness](docs/release-readiness.md)
+
+## Cleanup and output checks
+
+- Bounded SO(3) cleanup creates a separate object/Action; root travel, fingers and IK control rotations are excluded by default. Selected-bone editing is available.
+- Short root repair requires source-video confirmation and trusted samples on both sides; terminal corruption is diagnosed rather than guessed.
+- Mixamo and generic UE4/UE5 FBX profiles use explicit axes and per-frame sampling without exporter key reduction. Retarget to the actual engine Skeleton.
+- New Unreal root bones start at model origin. Horizontal root allocation uses world XY while preserving body motion and height; existing root rest geometry is retained.
+- Export preflight checks discontinuities/nonfinite animation, protects existing output files and restores selection/frame/subframe. Package builds reject private captures and unreviewed modules.
+
+
 > Retarget BVH motion to Mixamo, Unreal Engine 5, and VRM humanoid rigs directly in Blender.
 
 [![Release](https://img.shields.io/github/v/release/BacteriaJun/BVH-Motion-Retargeter)](https://github.com/BacteriaJun/BVH-Motion-Retargeter/releases/latest)

@@ -1,5 +1,29 @@
 # BVH Motion Retargeter
 
+> **4.0.0 RC1 开发状态：尚未发布。** 本地候选新增 VMD 精修闭环，优先级为 VMD、Mixamo FBX、UE4/UE5 FBX。当前 GitHub Release 徽章仍指向已发布版本。
+
+## VMD 精修（新增）
+
+1. 安装候选 ZIP，在 `BVH Retarget` 面板选择 **VMD**。
+2. 选择 VMD 文件。没有 MMD 骨架时选择 **Reference Preview**；有匹配骨架时选择 **Selected MMD Rig**。
+3. 点击 **Import Editable VMD**，在 Blender 中编辑 Action，或用 **Create Denoised Copy** 创建有界去抖副本。原对象、原 Action 和默认排除的手指局部轨道保留。
+4. 选择 **Preserve Imported VMD** 后导出，只重建已编辑骨骼，原表情、相机、光照、阴影、IK 开关和未映射轨道保留。未修改文件可按原字节回导。
+5. BVH/Mixamo 的新动作可选择 **New FK Motion** 导出 VMD；先匹配目标 MMD 模型的骨名、rest pose 和单位。新 FK 文件显式关闭标准腿／脚尖 IK。
+
+VMD 不含骨架 rest pose。通用参考骨架用于 FK／控制轨道编辑，原生 MMD IK、附加变形、表情网格和物理需要对应模型环境；保留 IK 数据不等于已评估 IK。半角／全角指骨名字只在匹配时归一化，原始 VMD 名称和字节保留；有歧义时拒绝猜测。
+
+[VMD 完整使用说明](docs/vmd-workflow.md) · [Root Motion 验证](docs/root-motion-validation.md) · [发布前验收](docs/release-readiness.md)
+
+## 清理和导出
+
+- **Inspect Export Range** 标记 root 异常跳变；严重异常会阻止新导出，先审查或调整导出范围。
+- **Create Denoised Copy** 使用有界 SO(3) 滤波，默认不修改 root 位移、手指和 IK 控制旋转；支持仅处理选中的 Pose Bones。大角度突变保留待审。
+- **Create Root Repair Copy** 仅处理视频已确认、两侧有可信样本的 ≤150 ms 异常包；缺少右端点的坏尾不自动预测。
+- Mixamo、UE4 和 UE5 均使用明确的 FBX 轴向／逐帧采样设置。UE 配置提供通用 humanoid 命名与 root，进引擎后对目标 Skeleton 重定向。
+- 新建 UE root 位于模型原点，水平位移按世界 XY 分配，保留原身体轨迹和垂直运动。已有 root 的 rest 位置保持。
+- 输出默认防覆盖；当前活动骨架优先于“上次输出”，避免导出错对象。安装包只接受审核过的产品文件。
+
+
 > 在 Blender 中将 BVH 动捕数据重定向到 Mixamo、Unreal Engine 5 与 VRM 人形骨架。
 
 [![Release](https://img.shields.io/github/v/release/BacteriaJun/BVH-Motion-Retargeter)](https://github.com/BacteriaJun/BVH-Motion-Retargeter/releases/latest)
@@ -15,8 +39,9 @@
 
 目前支持：
 
+* **VMD 动作读写与精修**
 * **Mixamo**
-* **Unreal Engine 5**
+* **Unreal Engine 4 / 5**
 * **VRM 人形角色**
 
 ---

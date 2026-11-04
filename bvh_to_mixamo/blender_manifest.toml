@@ -1,8 +1,8 @@
 schema_version = "1.0.0"
 id = "bvh_to_mixamo"
-version = "3.2.0"
+version = "4.0.0"
 name = "BVH Motion Retargeter"
-tagline = "Retarget BVH motion to Mixamo, UE5, and VRM body rigs"
+tagline = "Edit VMD and retarget BVH to Mixamo, UE4/UE5, VRM"
 maintainer = "Junius"
 type = "add-on"
 tags = ["Animation", "Rigging", "Import-Export"]

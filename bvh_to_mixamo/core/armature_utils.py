@@ -2,13 +2,14 @@ import re
 
 import bpy
 
+from .animation_utils import iter_action_fcurves
 from .bone_data import MIXAMO_BONE_HIERARCHY
 from .bone_mapping import get_default_mapping
 from .logger import log_info, log_warning
 
 
 def is_mixamo_armature(armature):
-    if not armature or armature.type != 'ARMATURE':
+    if not armature or armature.type != "ARMATURE":
         return False
     key_bones = ["mixamorig:Hips", "mixamorig:Spine", "mixamorig:LeftArm", "mixamorig:RightArm"]
     found = sum(1 for name in key_bones if name in armature.data.bones)
@@ -23,7 +24,7 @@ def get_selected_mixamo_armature():
 
 
 def find_mixamo_armature_in_objects(objects):
-    armatures = [obj for obj in objects if obj and obj.type == 'ARMATURE']
+    armatures = [obj for obj in objects if obj and obj.type == "ARMATURE"]
     for armature in armatures:
         if is_mixamo_armature(armature):
             return armature
@@ -33,7 +34,7 @@ def find_mixamo_armature_in_objects(objects):
 def ensure_object_mode():
     try:
         if bpy.ops.object.mode_set.poll():
-            bpy.ops.object.mode_set(mode='OBJECT')
+            bpy.ops.object.mode_set(mode="OBJECT")
     except Exception:
         pass
 
@@ -43,8 +44,8 @@ def update_animation_bone_paths(armature, bone_mapping):
         return 0
     action = armature.animation_data.action
     updated = 0
-    for fcurve in action.fcurves:
-        if 'pose.bones[' not in fcurve.data_path:
+    for fcurve in iter_action_fcurves(action, armature):
+        if "pose.bones[" not in fcurve.data_path:
             continue
         match = re.search(r'pose\.bones\["([^"]+)"\]', fcurve.data_path)
         if not match:
@@ -62,7 +63,7 @@ def process_bones(armature, bone_mapping=None, update_animation=True):
         bone_mapping = get_default_mapping()
     bpy.context.view_layer.objects.active = armature
     ensure_object_mode()
-    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.object.mode_set(mode="EDIT")
     edit_bones = armature.data.edit_bones
 
     bvh_bone_names = set(bone.name for bone in edit_bones)
@@ -76,12 +77,12 @@ def process_bones(armature, bone_mapping=None, update_animation=True):
             edit_bones.remove(edit_bones[name])
     log_info(f"清理多余骨骼: 共删除 {len(bones_to_delete)} 个")
 
-    bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.object.mode_set(mode="OBJECT")
     if update_animation:
         updated = update_animation_bone_paths(armature, bone_mapping)
         log_info(f"更新了 {updated} 条F曲线的骨骼引用")
 
-    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.object.mode_set(mode="EDIT")
     edit_bones = armature.data.edit_bones
     mapped = 0
     for old_name, new_name in bone_mapping.items():
@@ -107,7 +108,9 @@ def process_bones(armature, bone_mapping=None, update_animation=True):
             child.tail = tail
             child.roll = roll
             if child.length < 0.001:
-                child.tail = child.head + (tail - head).normalized() * 0.01 if (tail - head).length > 0 else child.head.copy()
+                child.tail = (
+                    child.head + (tail - head).normalized() * 0.01 if (tail - head).length > 0 else child.head.copy()
+                )
 
     if "mixamorig:Hips" in edit_bones:
         hips = edit_bones["mixamorig:Hips"]
@@ -120,7 +123,7 @@ def process_bones(armature, bone_mapping=None, update_animation=True):
         if bone.parent:
             bone.use_connect = False
 
-    bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.object.mode_set(mode="OBJECT")
     armature.select_set(True)
     bpy.context.view_layer.objects.active = armature
     log_info("骨骼层级修复完成")
@@ -132,11 +135,13 @@ def verify_animation_data(armature):
         log_warning("骨架没有动画数据")
         return False
     action = armature.animation_data.action
-    if len(action.fcurves) == 0:
+    if len(list(iter_action_fcurves(action, armature))) == 0:
         log_warning("动画没有关键帧曲线")
         return False
-    total_keyframes = sum(len(fc.keyframe_points) for fc in action.fcurves)
-    log_info(f"动画数据验证: {action.name}, F曲线={len(action.fcurves)}, 关键帧={total_keyframes}, 帧范围={action.frame_range}")
+    total_keyframes = sum(len(fc.keyframe_points) for fc in iter_action_fcurves(action, armature))
+    log_info(
+        f"动画数据验证: {action.name}, F曲线={len(list(iter_action_fcurves(action, armature)))}, 关键帧={total_keyframes}, 帧范围={action.frame_range}"
+    )
     return True
 
 

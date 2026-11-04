@@ -7,9 +7,14 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -17,10 +22,10 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
-      - name: Install lint tools
-        run: python -m pip install ruff
+      - name: Install pinned lint tools
+        run: python -m pip install ruff==0.14.4
 
       - name: Lint Python
         run: ruff check .
@@ -32,7 +37,114 @@ jobs:
         run: python scripts/fetch_templates.py
 
       - name: Run repository tests
-        run: python -m unittest discover -s tests -v
+        run: |
+          mkdir -p verification
+          python -m unittest discover -s tests -v 2>&1 | tee verification/unit-tests.log
 
-      - name: Build Blender install package
-        run: python scripts/build_release.py
+      - name: Build twice and verify deterministic bytes
+        run: |
+          python scripts/build_release.py --output verification/install-a.zip
+          python scripts/build_release.py --output verification/install-b.zip
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          first = Path("verification/install-a.zip").read_bytes()
+          second = Path("verification/install-b.zip").read_bytes()
+          assert first == second, "Identical source produced different install archives"
+          Path("verification/install.sha256").write_text(hashlib.sha256(first).hexdigest() + "\n")
+          PY
+
+      - name: Keep validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pure-validation-${{ github.sha }}
+          path: |
+            verification/unit-tests.log
+            verification/install.sha256
+          if-no-files-found: warn
+
+  blender-native:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        blender: ["4.2.0", "5.1.2"]
+    env:
+      LIBGL_ALWAYS_SOFTWARE: "1"
+      BLENDER_USER_CONFIG: ${{ runner.temp }}/blender-config-${{ matrix.blender }}
+      BLENDER_USER_SCRIPTS: ${{ runner.temp }}/blender-scripts-${{ matrix.blender }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install headless runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y xvfb xauth libx11-6 libxxf86vm1 libxfixes3 libxi6 libxcursor1 libxrandr2 libxinerama1 libxrender1 libxkbcommon0 libsm6 libice6 libegl1 libgl1
+
+      - name: Fetch verified Blender runtime
+        id: runtime
+        run: |
+          python scripts/fetch_blender.py --version "${{ matrix.blender }}" --destination "${{ runner.temp }}/blender-runtime-${{ matrix.blender }}" --github-output "$GITHUB_OUTPUT"
+
+      - name: Fetch verified character templates
+        run: python scripts/fetch_templates.py
+
+      - name: Native VMD roundtrip and new-motion export
+        run: |
+          xvfb-run -a "${{ steps.runtime.outputs.blender_path }}" --background --factory-startup --disable-autoexec --python-exit-code 1 --python tests/blender/test_vmd_roundtrip.py -- --output verification/vmd
+
+      - name: Native cleanup and source preservation
+        run: |
+          xvfb-run -a "${{ steps.runtime.outputs.blender_path }}" --background --factory-startup --disable-autoexec --python-exit-code 1 --python tests/blender/test_cleanup.py -- --output verification/cleanup
+
+      - name: Native Mixamo and UE4 UE5 FBX roundtrips
+        run: |
+          xvfb-run -a "${{ steps.runtime.outputs.blender_path }}" --background --factory-startup --disable-autoexec --python-exit-code 1 --python tests/blender/test_fbx_profiles.py -- --output verification/fbx
+
+      - name: Native Constraint Bake rollback and bounded simplification
+        run: |
+          xvfb-run -a "${{ steps.runtime.outputs.blender_path }}" --background --factory-startup --disable-autoexec --python-exit-code 1 --python tests/blender/test_retarget.py -- --output verification/retarget
+
+      - name: Native public character skinning and mesh FBX pipeline
+        run: |
+          xvfb-run -a "${{ steps.runtime.outputs.blender_path }}" --background --factory-startup --disable-autoexec --python-exit-code 1 --python tests/blender/test_character_pipeline.py -- --output verification/character
+
+      - name: Native registered operators and panel schema
+        run: |
+          xvfb-run -a "${{ steps.runtime.outputs.blender_path }}" --background --factory-startup --disable-autoexec --python-exit-code 1 --python tests/blender/test_operators.py -- --output verification/operators
+
+      - name: Native VMD release counterexamples
+        run: |
+          xvfb-run -a "${{ steps.runtime.outputs.blender_path }}" --background --factory-startup --disable-autoexec --python-exit-code 1 --python tests/blender/test_vmd_adversarial.py -- --output verification/adversarial
+
+      - name: Build the exact installable package
+        run: python scripts/build_release.py --output verification/install.zip
+
+      - name: Native isolated install enable and VMD smoke
+        env:
+          BLENDER_USER_CONFIG: ${{ github.workspace }}/verification/install/config
+          BLENDER_USER_SCRIPTS: ${{ github.workspace }}/verification/install/scripts
+        run: |
+          mkdir -p verification/install/config verification/install/scripts
+          xvfb-run -a "${{ steps.runtime.outputs.blender_path }}" --background --factory-startup --disable-autoexec --python-exit-code 1 --python tests/blender/test_install.py -- --zip verification/install.zip --output verification/install
+
+      - name: Reject collected failures and missing reports
+        run: python scripts/fetch_blender.py --verify-reports verification --expected-version "${{ matrix.blender }}"
+
+      - name: Keep native reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-${{ matrix.blender }}-${{ github.sha }}
+          path: |
+            verification/**/*.json
+          if-no-files-found: warn

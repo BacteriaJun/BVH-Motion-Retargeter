@@ -14,3 +14,23 @@ htmlcov/
 dist/
 *.zip
 bvh_to_mixamo/templates/*.fbx
+# Local validation/customer material is never part of the public source.
+verification/
+validation/
+evidence/
+artifacts/
+.ci-blender/
+*.blend
+*.blend1
+*.vmd
+*.mp4
+*.mov
+*.fbx
+
+*.bvh
+!tests/fixtures/synthetic_motion.bvh
+*.pmx
+*.pmd
+*.vrm
+*.glb
+*.gltf
