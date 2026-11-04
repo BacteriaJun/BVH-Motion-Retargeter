@@ -2,7 +2,7 @@
   "version": "4.0.0",
   "verification_date": "2026-11-04",
   "base_commit": "b2a36865b2e7bd4ce731771f2f114510849efedf",
-  "unit_tests_passed": 57,
+  "unit_tests_passed": 58,
   "ruff_passed": true,
   "compile_passed": true,
   "install_zip_sha256": "0de8710444d3d5b0d110e51e1b6c0dd31b7509cb521c79d6ee3bb50b4f1750b5",
@@ -86,10 +86,15 @@
     "customer_data_bundled_in_public_source": false
   },
   "independent_VMD_reader_checks": 13,
-  "remote_GitHub_CI_run": false,
   "MMD_native_playback_verified": false,
   "Unreal_Editor_playback_verified": false,
   "platforms_tested": [
     "macOS arm64"
+  ],
+  "record_scope": "Local macOS and Python verification; remote results and reports are recorded per commit in GitHub Actions.",
+  "remote_GitHub_CI_workflow": "https://github.com/BacteriaJun/BVH-Motion-Retargeter/actions/workflows/ci.yml",
+  "configured_CI_platforms": [
+    "ubuntu-24.04",
+    "windows-2022"
   ]
 }

@@ -193,7 +193,7 @@ def main(output):
         "global_preferences_unchanged": prefs_snapshot() == original_prefs,
         "native_translation_preferences": original_prefs,
     }
-    (output / "i18n_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
+    (output / "i18n_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False))
     print("I18N_TEST_OK")
 

@@ -165,7 +165,7 @@ def main():
     def test_noise_truth_and_cap():
         rig, path = create_rig(directory, "truth_noise")
         # Produce a clean source independently from the generated noisy motion.
-        text = path.read_text()
+        text = path.read_text(encoding="utf-8")
         hierarchy, motion = text.split("MOTION", 1)
         order = [line.split()[1] for line in hierarchy.splitlines() if line.strip().startswith(("ROOT ", "JOINT "))]
         rows = motion.strip().splitlines()
@@ -175,7 +175,7 @@ def main():
             values[column] = str(float(values[column]) - 3 * (-1) ** i)
             rows[i + 2] = " ".join(values)
         truth_path = directory / "known_truth.bvh"
-        truth_path.write_text(hierarchy + "MOTION\n" + "\n".join(rows) + "\n")
+        truth_path.write_text(hierarchy + "MOTION\n" + "\n".join(rows) + "\n", encoding="utf-8")
         truth_rig, _ = import_bvh(str(truth_path), True)
         process_bones(truth_rig, get_default_mapping())
         out, report = cleanup_rotations(bpy.context, rig, strength=1, cap_degrees=3)
@@ -386,7 +386,7 @@ def main():
             for name in ["motion_math.py", "motion_cleanup.py", "animation_utils.py", "export_profiles.py"]
         },
     }
-    (directory / "cleanup_verification.json").write_text(json.dumps(report, indent=2))
+    (directory / "cleanup_verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     assert report["passed"] == report["total"], [(r["id"], r.get("error")) for r in results if not r["passed"]]
 
 

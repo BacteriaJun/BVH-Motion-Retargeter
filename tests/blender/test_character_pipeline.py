@@ -231,7 +231,7 @@ def main():
             for name in ["bvh_parser.py", "retarget_engine.py", "export_profiles.py", "template_loader.py"]
         },
     }
-    (folder / "verification.json").write_text(json.dumps(report, indent=2))
+    (folder / "verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     assert report["passed"] == report["total"], [(c["id"], c.get("error")) for c in checks if not c["passed"]]
 
 

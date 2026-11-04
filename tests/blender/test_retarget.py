@@ -355,7 +355,7 @@ def main():
             (ROOT / "bvh_to_mixamo/core/retarget_engine.py").read_bytes()
         ).hexdigest(),
     }
-    (folder / "verification.json").write_text(json.dumps(report, indent=2))
+    (folder / "verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     assert report["passed"] == report["total"], [(c["id"], c.get("error")) for c in checks if not c["passed"]]
 
 

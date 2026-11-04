@@ -89,7 +89,7 @@ python scripts/build_release.py
 
 安装 ZIP 生成于 `dist/`。运行时代码位于 `bvh_to_mixamo/`；文档、测试、构建工具和 CI 分别维护在 `docs/`、`tests/`、`scripts/` 与工作流目录中。构建会校验两个模板的哈希、包内文件清单和版本一致性，并生成可重复的 ZIP 字节。
 
-CI 配置包含仓库检查与 Blender 4.2.0／5.1.2 原生回归，覆盖 VMD、动作清理、FBX、重定向、人物绑定、操作器、语言切换、模板迁移和隔离安装。
+CI 配置包含仓库检查，以及 Linux／Windows 上的 Blender 4.2.0／5.1.2 原生回归，覆盖 VMD、动作清理、FBX、重定向、人物绑定、操作器、语言切换、模板迁移和隔离安装。
 
 ## 文档
 

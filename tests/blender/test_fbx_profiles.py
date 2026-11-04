@@ -291,7 +291,7 @@ def main():
             for n in ["export_profiles.py", "ue5_profile.py", "animation_utils.py"]
         },
     }
-    (directory / "fbx_verification.json").write_text(json.dumps(report, indent=2))
+    (directory / "fbx_verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     assert report["passed"] == report["total"], [(r["id"], r.get("error")) for r in records if not r["passed"]]
 
 

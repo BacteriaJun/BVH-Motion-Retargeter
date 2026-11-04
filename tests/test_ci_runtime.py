@@ -343,6 +343,29 @@ class RuntimeBootstrapTests(unittest.TestCase):
         self.assertTrue(output.is_file())
         self.assertIn(str(output), result.stdout)
 
+    def test_windows_workflow_pins_official_archives_and_checks_all_native_groups(self):
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+        windows = workflow.split("  blender-windows:", 1)[1].split("  blender-native:", 1)[0]
+        self.assertIn("runs-on: windows-2022", windows)
+        self.assertIn("shell: pwsh", windows)
+        for digest in (
+            "b6e72874f8cb5c4ed77f9b03d7f1fde851b9455a7ff02a1e1119c876318ebc65",
+            "345bedea7b0acf7cc9666423d8553f9129622aea34ded65c23e8cb70f83f14ff",
+        ):
+            self.assertIn(digest, windows)
+        self.assertIn("https://download.blender.org/release/Blender$series/$filename", windows)
+        self.assertLess(windows.index("Get-FileHash"), windows.index("Expand-Archive"))
+        self.assertIn("$actual -ne", windows)
+        self.assertIn("BLENDER_USER_CONFIG", windows)
+        self.assertIn("BLENDER_USER_SCRIPTS", windows)
+        self.assertIn('if ($LASTEXITCODE -ne 0)', windows)
+        self.assertIn('if ($case.Key -eq "install") { $output }', windows)
+        self.assertIn("--verify-reports verification", windows)
+        cases = windows.split("$cases = [ordered]@{", 1)[1].split("}", 1)[0]
+        for group in fetch.NATIVE_REPORTS:
+            self.assertIn(group.split("/", 1)[0] + " = ", cases)
+        self.assertEqual(cases.count('"tests/blender/test_'), len(fetch.NATIVE_REPORTS))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -11,7 +11,7 @@
 | Local native runtime | macOS arm64, Blender 4.2.0 and 5.1.2: VMD, cleanup, FBX, retargeting, character binding, operators, language switching, template migration, adversarial cases and isolated installation. |
 | Interface / templates | Auto, 简体中文 and English; Black/White templates plus Custom; discontinued template choices migrate to White. |
 | Build | Version agreement, package-file allowlist, two SHA256-verified templates, MIT attribution and deterministic archives. |
-| GitHub CI | Current public main `b2a3686` passed. The new dual-version workflow obtains its result after the 4.0.0 source commit is pushed. |
+| GitHub CI | Linux and Windows jobs run Blender 4.2.0 and 5.1.2. Each commit’s result and native reports are available in GitHub Actions. |
 | Target-application checks | MikuMikuDance/PMX playback and Unreal Editor import remain to be checked in the intended model/project. |
 
 The reference armature edits FK/control tracks and retains source IK-switch fields. The corresponding MMD model environment supplies model-specific IK, append transforms, facial deformation and physics.

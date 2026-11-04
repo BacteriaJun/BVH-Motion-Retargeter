@@ -122,7 +122,7 @@ def run(package: Path, output: Path):
         "isolated_scripts": scripts,
         "scope": "Actual legacy ZIP install/enable and VMD operator smoke. Isolated preferences only; no user default configuration or external service modified.",
     }
-    (output / "verification.json").write_text(json.dumps(report, ensure_ascii=False, indent=2))
+    (output / "verification.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 
@@ -136,6 +136,6 @@ if __name__ == "__main__":
     except Exception:
         args.output.mkdir(parents=True, exist_ok=True)
         (args.output / "failure.json").write_text(
-            json.dumps({"error": traceback.format_exc(), "blender_version": bpy.app.version_string}, indent=2)
+            json.dumps({"error": traceback.format_exc(), "blender_version": bpy.app.version_string}, indent=2), encoding="utf-8"
         )
         raise

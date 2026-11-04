@@ -400,7 +400,7 @@ def main():
         "export_report": report,
         "scope": "Synthetic independently specified bone geometry/poses and actual Blender channel I/O. No PMX/MMD native IK, vendor VMD or end-user model playback acceptance.",
     }
-    (directory / "verification.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2))
+    (directory / "verification.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
 

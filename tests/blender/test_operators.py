@@ -182,7 +182,7 @@ def write_bvh(path):
             angle = 2.0 * math.sin(2 * math.pi * 6 * frame / 30) if name == "Head" else 0.0
             values += [angle, 0.0, 0.0]
         lines.append(" ".join(f"{v:.9f}" for v in values))
-    path.write_text("\n".join(lines) + "\n")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 class UILayoutStub:
@@ -382,7 +382,7 @@ def main(output):
         "source_sha256": sha(source),
         "scope": "Actual registered bpy.ops plus schema-aware mocked panel drawing. Synthetic fixtures only; not MMD/UE native playback or customer-capture quality.",
     }
-    (output / "verification.json").write_text(json.dumps(result, ensure_ascii=False, indent=2))
+    (output / "verification.json").write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
@@ -395,6 +395,6 @@ if __name__ == "__main__":
     except Exception:
         args.output.mkdir(parents=True, exist_ok=True)
         (args.output / "failure.json").write_text(
-            json.dumps({"error": traceback.format_exc(), "blender_version": bpy.app.version_string}, indent=2)
+            json.dumps({"error": traceback.format_exc(), "blender_version": bpy.app.version_string}, indent=2), encoding="utf-8"
         )
         raise

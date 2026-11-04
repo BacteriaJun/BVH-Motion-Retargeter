@@ -64,6 +64,106 @@ jobs:
             verification/install.sha256
           if-no-files-found: warn
 
+  blender-windows:
+    needs: validate
+    runs-on: windows-2022
+    timeout-minutes: 35
+    defaults:
+      run:
+        shell: pwsh
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - blender: "4.2.0"
+            sha256: "b6e72874f8cb5c4ed77f9b03d7f1fde851b9455a7ff02a1e1119c876318ebc65"
+          - blender: "5.1.2"
+            sha256: "345bedea7b0acf7cc9666423d8553f9129622aea34ded65c23e8cb70f83f14ff"
+    env:
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch verified official Windows Blender runtime
+        id: runtime
+        run: |
+          $version = "${{ matrix.blender }}"
+          $series = $version -replace '\.\d+$', ''
+          $filename = "blender-$version-windows-x64.zip"
+          $archive = Join-Path $env:RUNNER_TEMP $filename
+          $destination = Join-Path $env:RUNNER_TEMP "blender-runtime-$version"
+          Invoke-WebRequest -Uri "https://download.blender.org/release/Blender$series/$filename" -OutFile $archive -TimeoutSec 180
+          $actual = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne "${{ matrix.sha256 }}") { throw "Official Windows Blender SHA256 mismatch" }
+          Expand-Archive -LiteralPath $archive -DestinationPath $destination
+          $binary = Join-Path $destination "blender-$version-windows-x64/blender.exe"
+          if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) { throw "Verified runtime has no blender.exe" }
+          "blender_path=$binary" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Fetch verified character templates and build install ZIP
+        run: |
+          python scripts/fetch_templates.py
+          if ($LASTEXITCODE -ne 0) { throw "Template preparation failed" }
+          python scripts/build_release.py --output verification/install.zip
+          if ($LASTEXITCODE -ne 0) { throw "Installation build failed" }
+
+      - name: Native Windows motion workflows and exact ZIP installation
+        run: |
+          $binary = "${{ steps.runtime.outputs.blender_path }}"
+          $repository = (Get-Location).Path
+          $verification = Join-Path $repository "verification"
+          $package = Join-Path $verification "install.zip"
+          $cases = [ordered]@{
+            vmd = "tests/blender/test_vmd_roundtrip.py"
+            cleanup = "tests/blender/test_cleanup.py"
+            fbx = "tests/blender/test_fbx_profiles.py"
+            operators = "tests/blender/test_operators.py"
+            adversarial = "tests/blender/test_vmd_adversarial.py"
+            retarget = "tests/blender/test_retarget.py"
+            character = "tests/blender/test_character_pipeline.py"
+            i18n = "tests/blender/test_i18n.py"
+            templates = "tests/blender/test_templates.py"
+            install = "tests/blender/test_install.py"
+          }
+          foreach ($case in $cases.GetEnumerator()) {
+            $output = Join-Path $verification $case.Key
+            $env:BLENDER_USER_CONFIG = Join-Path $output "config"
+            $env:BLENDER_USER_SCRIPTS = Join-Path $output "scripts"
+            New-Item -ItemType Directory -Path $env:BLENDER_USER_CONFIG, $env:BLENDER_USER_SCRIPTS -Force | Out-Null
+            $script = Join-Path $repository $case.Value
+            $arguments = @("--background", "--factory-startup", "--disable-autoexec", "--python-exit-code", "1", "--python", $script, "--", "--output", $output)
+            if ($case.Key -eq "install") { $arguments += @("--zip", $package) }
+            Push-Location $(if ($case.Key -eq "install") { $output } else { $repository })
+            try {
+              & $binary @arguments 2>&1 | Tee-Object -FilePath (Join-Path $output "process.log")
+              if ($LASTEXITCODE -ne 0) { throw "Native Windows test failed: $($case.Key), exit $LASTEXITCODE" }
+            } finally {
+              Pop-Location
+            }
+          }
+
+      - name: Reject collected failures and missing reports
+        run: |
+          python scripts/fetch_blender.py --verify-reports verification --expected-version "${{ matrix.blender }}"
+          if ($LASTEXITCODE -ne 0) { throw "Native Windows report verification failed" }
+
+      - name: Keep Windows native reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-windows-${{ matrix.blender }}-${{ github.sha }}
+          path: |
+            verification/**/*.json
+            verification/**/process.log
+          if-no-files-found: warn
+
   blender-native:
     needs: validate
     runs-on: ubuntu-24.04
@@ -74,8 +174,8 @@ jobs:
         blender: ["4.2.0", "5.1.2"]
     env:
       LIBGL_ALWAYS_SOFTWARE: "1"
-      BLENDER_USER_CONFIG: ${{ runner.temp }}/blender-config-${{ matrix.blender }}
-      BLENDER_USER_SCRIPTS: ${{ runner.temp }}/blender-scripts-${{ matrix.blender }}
+      BLENDER_USER_CONFIG: ${{ github.workspace }}/verification/runtime-config-${{ matrix.blender }}
+      BLENDER_USER_SCRIPTS: ${{ github.workspace }}/verification/runtime-scripts-${{ matrix.blender }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -100,6 +200,7 @@ jobs:
 
       - name: Native VMD roundtrip and new-motion export
         run: |
+          mkdir -p "$BLENDER_USER_CONFIG" "$BLENDER_USER_SCRIPTS"
           xvfb-run -a "${{ steps.runtime.outputs.blender_path }}" --background --factory-startup --disable-autoexec --python-exit-code 1 --python tests/blender/test_vmd_roundtrip.py -- --output verification/vmd
 
       - name: Native cleanup and source preservation

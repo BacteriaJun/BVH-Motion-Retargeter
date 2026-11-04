@@ -170,7 +170,7 @@ def main():
         "assets": assets,
         "scope": "Two shipped FBX assets and actual Scene enum-storage/load migration.",
     }
-    (args.output / "verification.json").write_text(json.dumps(result, ensure_ascii=False, indent=2))
+    (args.output / "verification.json").write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 

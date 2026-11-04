@@ -241,7 +241,7 @@ def main():
         "codec_sha256": digest(ROOT / "bvh_to_mixamo/core/vmd_codec.py"),
         "bridge_sha256": digest(ROOT / "bvh_to_mixamo/core/vmd_blender.py"),
     }
-    (output / "report.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2))
+    (output / "report.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
 
